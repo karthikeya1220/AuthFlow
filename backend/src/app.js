@@ -2,9 +2,14 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const cookieParser = require('cookie-parser');
+const swaggerUi = require('swagger-ui-express');
+const swaggerDocument = require('./config/swagger.json');
 const v1Routes = require('./routes/v1');
 
 const app = express();
+
+// Swagger Documentation
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 // Security Middleware
 app.use(helmet());
