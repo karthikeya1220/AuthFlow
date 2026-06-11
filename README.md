@@ -1,222 +1,104 @@
-# 🔐 Scalable REST API — Auth & Role-Based Access Control
+# PrimeAuth
 
-A production-ready backend with JWT authentication, RBAC, and full CRUD — built with Node.js, Express, and PostgreSQL. Includes a lightweight React frontend for live API interaction.
+PrimeAuth is an enterprise-grade authentication and task management dashboard designed for performance, security, and scalability. It features a robust Node.js backend using Express and Prisma, paired with a modern React + Tailwind CSS frontend.
 
----
+## Features
 
-## 🧱 Tech Stack
+- **JWT Authentication Flow**: Stateless JWT access tokens (15m expiry) and secure HTTP-only refresh tokens (7d expiry) with automated rotation.
+- **Enterprise RBAC**: Role-based access control with standard (`USER`) and administrative (`ADMIN`) roles.
+- **Task Management**: Create, view, update, and delete tasks. Users manage their own tasks, while Admins have full oversight.
+- **Modern UI/UX**: Premium aesthetic featuring a dark mode corporate design, utilizing Tailwind CSS and Google Fonts (Inter, Geist).
+- **API Documentation**: Fully documented REST API accessible via Swagger UI.
 
-| Layer        | Technology                        |
-|--------------|-----------------------------------|
-| Runtime      | Node.js 20+                       |
-| Framework    | Express.js                        |
-| Database     | PostgreSQL (via Prisma ORM)       |
-| Auth         | JWT (access + refresh tokens)     |
-| Hashing      | bcryptjs                          |
-| Validation   | Zod                               |
-| Docs         | Swagger UI (`/api-docs`)          |
-| Frontend     | React.js (Vite)                   |
-| Optional     | Redis (caching), Docker           |
+## Tech Stack
 
----
+### Backend
+- Node.js & Express
+- Prisma ORM
+- PostgreSQL (or SQLite for local dev)
+- Zod for payload validation
+- JSON Web Tokens (jsonwebtoken) for stateless auth
 
-## 📁 Project Structure
+### Frontend
+- React 18 & Vite
+- Tailwind CSS (v3.4) for styling and design tokens
+- React Router DOM for client-side routing
+- Axios for API communication (with JWT interceptors)
 
-```
-/
-├── backend/
-│   ├── src/
-│   │   ├── config/         # DB, env, swagger config
-│   │   ├── middleware/      # auth, error, validation
-│   │   ├── modules/
-│   │   │   ├── auth/        # register, login, refresh
-│   │   │   ├── users/       # user management (admin)
-│   │   │   └── tasks/       # CRUD entity
-│   │   ├── routes/          # versioned route registry
-│   │   ├── utils/           # jwt, hash, response helpers
-│   │   └── app.js
-│   ├── prisma/
-│   │   └── schema.prisma
-│   ├── .env.example
-│   └── package.json
-│
-├── frontend/
-│   ├── src/
-│   │   ├── pages/           # Login, Register, Dashboard
-│   │   ├── components/      # TaskCard, Navbar, AuthForm
-│   │   ├── api/             # axios instance + API calls
-│   │   └── context/         # AuthContext (JWT storage)
-│   └── package.json
-│
-└── docs/
-    ├── ARCHITECTURE.md
-    ├── API_CONTRACTS.md
-    ├── PROJECT_CONTEXT.md
-    └── SCALABILITY.md
-```
-
----
-
-## ⚙️ Setup & Installation
+## Getting Started
 
 ### Prerequisites
+- Node.js (v18 or higher recommended)
+- PostgreSQL (optional, defaults to SQLite if configured)
 
-- Node.js 20+
-- PostgreSQL 14+ running locally or via Docker
-- (Optional) Redis for caching
+### 1. Setup Backend
+1. Navigate to the backend directory:
+   ```bash
+   cd backend
+   ```
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+3. Set up environment variables. Create a `.env` file based on `.env.example`:
+   ```env
+   PORT=5000
+   DATABASE_URL="file:./dev.db"
+   JWT_SECRET="your_jwt_secret"
+   JWT_EXPIRES_IN="15m"
+   JWT_REFRESH_SECRET="your_refresh_secret"
+   JWT_REFRESH_EXPIRES_IN="7d"
+   ```
+4. Run Prisma migrations:
+   ```bash
+   npx prisma generate
+   npx prisma migrate dev --name init
+   ```
+5. Start the backend development server:
+   ```bash
+   npm run dev
+   ```
+   > API Documentation is available at: `http://localhost:5000/api-docs`
 
----
+### 2. Setup Frontend
+1. Navigate to the frontend directory:
+   ```bash
+   cd frontend
+   ```
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+3. Start the frontend development server:
+   ```bash
+   npm run dev
+   ```
+   > The application will typically be available at `http://localhost:5173`
 
-### 1. Clone the Repository
+## API Endpoints
 
-```bash
-git clone https://github.com/YOUR_USERNAME/primetrade-backend-assignment.git
-cd primetrade-backend-assignment
-```
+### Auth Module (`/api/v1/auth`)
+- `POST /register`: Create a new user account (defaults to `USER` role).
+- `POST /login`: Authenticate and receive an access token and HTTP-only refresh token.
+- `POST /refresh`: Generate a new access token using a valid refresh token.
+- `POST /logout`: Clear the HTTP-only refresh token cookie.
 
----
+### Tasks Module (`/api/v1/tasks`)
+- `GET /`: Retrieve all tasks for the authenticated user.
+- `POST /`: Create a new task.
+- `PUT /:id`: Update a task (must be owned by user, or user must be `ADMIN`).
+- `DELETE /:id`: Delete a task (must be owned by user, or user must be `ADMIN`).
+- `GET /all`: Admin only. Retrieve all tasks across all users.
 
-### 2. Backend Setup
+### Users Module (`/api/v1/users`)
+- `GET /`: Admin only. Retrieve all users.
+- `GET /me`: Retrieve the authenticated user's profile.
 
-```bash
-cd backend
-cp .env.example .env
-npm install
-```
+## Security Practices
+- **Password Hashing**: Passwords are hashed using `bcrypt` before storage.
+- **Token Storage**: Refresh tokens are stored securely in `httpOnly` cookies, mitigating XSS risks.
+- **Payload Validation**: Strict request validation using `zod` to prevent malformed data.
+- **RBAC Enforcement**: API routes are protected by middleware verifying user roles and data ownership.
 
-Edit `.env`:
-
-```env
-DATABASE_URL="postgresql://USER:PASSWORD@localhost:5432/primetrade_db"
-JWT_SECRET="your_super_secret_key_here"
-JWT_REFRESH_SECRET="your_refresh_secret_here"
-JWT_EXPIRES_IN="15m"
-JWT_REFRESH_EXPIRES_IN="7d"
-PORT=5000
-NODE_ENV=development
-
-# Optional
-REDIS_URL="redis://localhost:6379"
-```
-
-Run database migrations:
-
-```bash
-npx prisma migrate dev --name init
-npx prisma generate
-```
-
-Seed an admin user (optional):
-
-```bash
-npm run seed
-```
-
-Start the backend:
-
-```bash
-npm run dev
-```
-
-Backend runs at: `http://localhost:5000`
-Swagger docs at: `http://localhost:5000/api-docs`
-
----
-
-### 3. Frontend Setup
-
-```bash
-cd frontend
-cp .env.example .env
-npm install
-npm run dev
-```
-
-Edit `frontend/.env`:
-
-```env
-VITE_API_BASE_URL=http://localhost:5000/api/v1
-```
-
-Frontend runs at: `http://localhost:5173`
-
----
-
-## 🔑 Default Credentials (After Seeding)
-
-| Role  | Email               | Password     |
-|-------|---------------------|--------------|
-| Admin | admin@primetrade.ai | Admin@123    |
-| User  | user@primetrade.ai  | User@123     |
-
----
-
-## 🧪 API Overview
-
-| Method | Endpoint                   | Auth     | Role  | Description            |
-|--------|----------------------------|----------|-------|------------------------|
-| POST   | /api/v1/auth/register      | ❌       | —     | Register new user      |
-| POST   | /api/v1/auth/login         | ❌       | —     | Login, get JWT         |
-| POST   | /api/v1/auth/refresh       | ❌       | —     | Refresh access token   |
-| POST   | /api/v1/auth/logout        | ✅       | any   | Invalidate token       |
-| GET    | /api/v1/users              | ✅       | admin | List all users         |
-| PATCH  | /api/v1/users/:id/role     | ✅       | admin | Change user role       |
-| DELETE | /api/v1/users/:id          | ✅       | admin | Delete user            |
-| GET    | /api/v1/tasks              | ✅       | any   | Get own tasks          |
-| POST   | /api/v1/tasks              | ✅       | any   | Create task            |
-| PATCH  | /api/v1/tasks/:id          | ✅       | any   | Update task            |
-| DELETE | /api/v1/tasks/:id          | ✅       | any   | Delete task            |
-| GET    | /api/v1/tasks/all          | ✅       | admin | Get all users' tasks   |
-
-Full request/response specs → [`docs/API_CONTRACTS.md`](./docs/API_CONTRACTS.md)
-
----
-
-## 🐳 Docker (Optional)
-
-```bash
-docker-compose up --build
-```
-
-This spins up:
-- Node.js backend on port 5000
-- PostgreSQL on port 5432
-- Redis on port 6379
-
----
-
-## 📖 API Documentation
-
-Interactive Swagger UI available at `/api-docs` once the server is running.
-
-To export Postman collection: import `docs/postman_collection.json`.
-
----
-
-## 🚀 Scalability
-
-See [`docs/SCALABILITY.md`](./docs/SCALABILITY.md) for the full note on horizontal scaling, caching, microservices decomposition, and load balancing strategy.
-
----
-
-## ✅ Evaluation Checklist
-
-- [x] JWT authentication (access + refresh tokens)
-- [x] Password hashing with bcryptjs
-- [x] Role-based access control (user / admin)
-- [x] Full CRUD on Tasks entity
-- [x] API versioning (`/api/v1/`)
-- [x] Input validation with Zod
-- [x] Centralized error handling middleware
-- [x] Swagger documentation
-- [x] PostgreSQL with Prisma ORM
-- [x] React frontend with protected routes
-- [x] Scalability documentation
-
----
-
-## 👨‍💻 Author
-
-**R Darshan Karthikeya**
-B.Tech CSE, IIITDM Kancheepuram
-[GitHub](https://github.com/YOUR_USERNAME) • [LinkedIn](https://linkedin.com/in/YOUR_PROFILE)
+## License
+© 2024 PrimeAuth Engineering. All rights reserved.

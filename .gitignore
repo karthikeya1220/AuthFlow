@@ -133,3 +133,5 @@ dist
 # Vite / React
 dist-ssr
 *.local
+
+/stitch_screens
